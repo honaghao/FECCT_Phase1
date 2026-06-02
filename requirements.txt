@@ -1,0 +1,8 @@
+torch>=2.0.0
+numpy>=1.21.0
+wandb>=0.15.0
+matplotlib>=3.5.0
+scipy>=1.9.0
+# Note: tkinter is required for live_monitor.py
+# On Ubuntu/Debian: sudo apt-get install python3-tk
+# On Fedora: sudo dnf install python3-tkinter

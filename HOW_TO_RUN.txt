@@ -1,0 +1,169 @@
+================================================================================
+                    PHASE 1: FECCT TRANSFER MATRIX TRAINING
+                              HOW TO RUN GUIDE
+================================================================================
+
+This package trains 9 neural decoder models (3 codes × 3 seeds) for the
+behavioral transfer matrix study.
+
+Estimated time: 4-5 days on RTX 4070 16GB
+
+================================================================================
+STEP 1: SETUP ENVIRONMENT
+================================================================================
+
+# 1.1 Navigate to the folder
+cd Phase_1
+
+# 1.2 Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 1.3 Install dependencies
+pip install -r requirements.txt
+
+# 1.4 Install tkinter for live monitor (Ubuntu/Debian)
+sudo apt-get install python3-tk
+
+# 1.5 (Optional) Login to wandb for cloud logging
+wandb login
+
+================================================================================
+STEP 2: START TRAINING
+================================================================================
+
+Option A: Run in background (RECOMMENDED for long training)
+------------------------------------------------------------
+nohup python train_phase1.py > training_output.log 2>&1 &
+
+# Check if running:
+ps aux | grep train_phase1
+
+# View output:
+tail -f training_output.log
+
+
+Option B: Run in screen session (can detach/reattach)
+------------------------------------------------------
+screen -S fecct
+python train_phase1.py
+
+# Detach: Press Ctrl+A, then D
+# Reattach later: screen -r fecct
+
+
+Option C: Run in tmux session
+------------------------------
+tmux new -s fecct
+python train_phase1.py
+
+# Detach: Press Ctrl+B, then D
+# Reattach later: tmux attach -t fecct
+
+================================================================================
+STEP 3: MONITOR TRAINING (in a separate terminal)
+================================================================================
+
+# Activate environment first
+source venv/bin/activate
+
+# Option 1: Live plot with FECCT baselines (RECOMMENDED)
+python live_monitor.py
+
+# Option 2: Console status only (no GUI needed)
+python live_monitor.py --status
+
+# Option 3: Watch GPU usage
+watch -n 1 nvidia-smi
+
+# Option 4: Follow training log
+tail -f Results_FECCT/*/training.log
+
+================================================================================
+STEP 4: AFTER TRAINING COMPLETES
+================================================================================
+
+# Build the transfer matrix
+python evaluate_phase1.py
+
+# Output: transfer_matrix_phase1.csv
+
+================================================================================
+WHAT GETS TRAINED
+================================================================================
+
+Code Family     Code            Seeds           Models
+-----------     ----            -----           ------
+BCH             BCH(63,45)      42, 123, 456    3
+Polar           Polar(64,32)    42, 123, 456    3
+LDPC            LDPC(49,24)     42, 123, 456    3
+                                                -----
+                                         Total: 9 models
+
+================================================================================
+OUTPUT FILES
+================================================================================
+
+After training, you will have:
+
+Results_FECCT/
+├── BCH_N63_K45__YYYYMMDD_HHMMSS/
+│   ├── best_model.pt       <- Best checkpoint
+│   ├── final_model.pt      <- Final model at epoch 1000
+│   └── training.log        <- Training logs
+├── BCH_N63_K45__YYYYMMDD_HHMMSS/   (seed 123)
+├── BCH_N63_K45__YYYYMMDD_HHMMSS/   (seed 456)
+├── POLAR_N64_K32__...
+├── POLAR_N64_K32__...
+├── POLAR_N64_K32__...
+├── LDPC_N49_K24__...
+├── LDPC_N49_K24__...
+└── LDPC_N49_K24__...
+
+================================================================================
+TRAINING CONFIGURATION
+================================================================================
+
+Parameter       Value           Note
+---------       -----           ----
+d_model         128             Model dimension
+N_dec           6               Transformer layers
+h               8               Attention heads
+batch_size      512             Batch size
+epochs          1000            Training epochs
+lr              1e-4            Learning rate (cosine decay)
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: CUDA out of memory
+Solution: Edit train_phase1.py, change CONFIG['batch_size'] from 512 to 256
+
+Problem: "No module named tkinter"
+Solution: sudo apt-get install python3-tk
+
+Problem: Training seems stuck
+Solution: Check GPU with nvidia-smi, check log with tail -f Results_FECCT/*/training.log
+
+Problem: Want to train single model only
+Solution: python train_phase1.py --code=BCH --seed=42
+
+================================================================================
+QUICK COMMANDS REFERENCE
+================================================================================
+
+# Start training (background)
+nohup python train_phase1.py > training_output.log 2>&1 &
+
+# Monitor with live plot
+python live_monitor.py
+
+# Check training status
+python live_monitor.py --status
+
+# Build transfer matrix after training
+python evaluate_phase1.py
+
+# Stop training
+pkill -f train_phase1.py
